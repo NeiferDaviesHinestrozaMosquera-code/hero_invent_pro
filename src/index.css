@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.sidebar-active {
+  @apply bg-primary-100 text-primary-500 font-medium;
+}
+
+.sidebar-active .sidebar-icon {
+  @apply text-primary-500;
+}
