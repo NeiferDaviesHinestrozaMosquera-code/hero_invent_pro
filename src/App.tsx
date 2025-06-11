@@ -10,7 +10,6 @@ import { Purchases } from './pages/purchases';
 import { Suppliers } from './pages/suppliers';
 import { Reports } from './pages/reports';
 import { Accounting } from './pages/accounting';
-//import { Customer } from './pages/customer';
 import { Customers } from './pages/customers';
 
 

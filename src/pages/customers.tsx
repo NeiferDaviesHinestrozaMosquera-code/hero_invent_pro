@@ -57,7 +57,7 @@ export const Customers: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`${API_BASE_URL}/api/customer`);
+      const response = await fetch(`${API_BASE_URL}/api/customers`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -99,7 +99,7 @@ export const Customers: React.FC = () => {
       if (confirm('¿Está seguro de que desea eliminar a este cliente?')) {
         try {
           setError('');
-          const response = await fetch(`${API_BASE_URL}/api/customer/${customer.id}`, {
+          const response = await fetch(`${API_BASE_URL}/api/customers/${customer.id}`, {
             method: 'DELETE'
           });
           
@@ -161,8 +161,8 @@ export const Customers: React.FC = () => {
       setError('');
       
       const url = selectedCustomer 
-        ? `${API_BASE_URL}/api/customer/${selectedCustomer.id}` 
-        : `${API_BASE_URL}/api/customer`;
+        ? `${API_BASE_URL}/api/customers/${selectedCustomer.id}` 
+        : `${API_BASE_URL}/api/customers`;
       
       const method = selectedCustomer ? 'PUT' : 'POST';
       

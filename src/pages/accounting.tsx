@@ -59,7 +59,7 @@ export const Accounting: React.FC = () => {
       label: 'Fecha',
       renderCell: (item: any) => {
         const date = new Date(item.date);
-        return date.toLocaleDateString('es-MX');
+        return date.toLocaleDateString('es-CO');
       }
     },
     {
@@ -90,7 +90,7 @@ export const Accounting: React.FC = () => {
       label: 'Fecha',
       renderCell: (item: any) => {
         const date = new Date(item.date);
-        return date.toLocaleDateString('es-MX');
+        return date.toLocaleDateString('es-CO');
       }
     },
     {

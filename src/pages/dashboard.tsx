@@ -9,7 +9,7 @@ import { PageHeader } from '../components/page-header';
 import { products, categories, suppliers, salesChartData, categoryChartData, inventoryChartData } from '../data/mock-data';
 
 export const Dashboard: React.FC = () => {
-  const lowStockProducts = products.filter(product => product.stock <= product.minStock);
+  const lowStockProducts = products.filter(product => product.stock <= product.min_stock);
 
   return (
     <div className="space-y-6">
@@ -72,7 +72,7 @@ export const Dashboard: React.FC = () => {
                         <div>
                           <p className="font-medium">{product.name}</p>
                           <p className="text-sm text-foreground-500">
-                            Stock: <span className="text-danger">{product.stock}</span> / Mínimo: {product.minStock}
+                            Stock: <span className="text-danger">{product.stock}</span> / Mínimo: {product.min_stock}
                           </p>
                         </div>
                       </div>

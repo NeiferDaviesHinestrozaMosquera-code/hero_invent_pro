@@ -22,7 +22,7 @@ export const Reports: React.FC = () => {
       label: 'Fecha',
       renderCell: (sale: any) => {
         const date = new Date(sale.date);
-        return date.toLocaleDateString('es-MX');
+        return date.toLocaleDateString('es-CO');
       }
     },
     {
@@ -48,7 +48,7 @@ export const Reports: React.FC = () => {
       label: 'Stock Actual'
     },
     {
-      key: 'minStock',
+      key: 'min_stock',
       label: 'Stock Mínimo'
     },
     {
@@ -77,7 +77,7 @@ export const Reports: React.FC = () => {
       label: 'Fecha',
       renderCell: (purchase: any) => {
         const date = new Date(purchase.date);
-        return date.toLocaleDateString('es-MX');
+        return date.toLocaleDateString('es-CO');
       }
     },
     {

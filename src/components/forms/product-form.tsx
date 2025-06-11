@@ -50,13 +50,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     price: '',
     cost: '',
     stock: '',
-    minStock: '5',
+    min_stock: '',
     currentStock: '',
     categoryId: '',
     supplierId: '',
     sku: '',
     barcode: '',
-    isActive: true
+    status: true,
+    image:''
   });
 
   React.useEffect(() => {
@@ -67,13 +68,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         price: product.price?.toString() || '',
         cost: product.cost?.toString() || '',
         stock: product.stock?.toString() || '',
-        minStock: product.minStock?.toString() || '5',
+        min_stock: product.min_stock?.toString() || '',
         currentStock: product.currentStock?.toString() || product.stock?.toString() || '',
         categoryId: product.categoryId?.toString() || '',
         supplierId: product.supplierId?.toString() || '',
         sku: product.sku || '',
         barcode: product.barcode || '',
-        isActive: product.isActive !== undefined ? product.isActive : true
+        status: product.status !== undefined ? product.status : true,
+        //status: product.status || 'active',
+        image:product.image || ''
       });
     } else if (isOpen) {
       // Reset form when opening for new product
@@ -83,13 +86,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         price: '',
         cost: '',
         stock: '',
-        minStock: '5',
+        min_stock: '',
         currentStock: '',
         categoryId: '',
         supplierId: '',
         sku: '',
         barcode: '',
-        isActive: true
+        status: true,
+        image: '',
       });
     }
   }, [product, isOpen]);
@@ -106,14 +110,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
 
     const productData = {
-      ...formData,
+      name: formData.name.trim(),
+      description: formData.description || null,
       price: parseFloat(formData.price) || 0,
-      cost: parseFloat(formData.cost) || 0,
-      stock: parseInt(formData.stock) || 0,
-      minStock: parseInt(formData.minStock) || 5,
-      currentStock: parseInt(formData.currentStock) || parseInt(formData.stock) || 0,
+      cost: formData.cost ? parseFloat(formData.cost) : null,
+      stock: formData.stock ? parseInt(formData.stock) : 0,
+      min_stock: formData.min_stock ? parseInt(formData.min_stock) : 0,
       categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
       supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
+      sku: formData.sku || null,
+      barcode: formData.barcode || null,
+      status: formData.status,
+      image: formData.image || null,
       id: product?.id || undefined
     };
 
@@ -230,8 +238,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   type="number"
                   label="Stock mínimo"
                   placeholder="5"
-                  value={formData.minStock}
-                  onValueChange={(value) => handleChange('minStock', value)}
+                  value={formData.min_stock}
+                  onValueChange={(value) => handleChange('min_stock', value)}
                   variant="bordered"
                 />
                 <Textarea
@@ -244,8 +252,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 />
                 <div className="col-span-1 md:col-span-2">
                   <Checkbox
-                    isSelected={formData.isActive}
-                    onValueChange={(value) => handleChange('isActive', value)}
+                    isSelected={formData.status}
+                    onValueChange={(value) => handleChange('status', value)}
                   >
                     Producto activo
                   </Checkbox>

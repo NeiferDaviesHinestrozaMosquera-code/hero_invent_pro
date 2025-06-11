@@ -14,12 +14,13 @@ import {
   DropdownMenu,
   DropdownItem,
   Chip,
-  Selection
+  Selection,
+  Spinner
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 
 interface DataTableProps<T> {
-  data: T[];
+  data?: T[];
   columns: {
     key: string;
     label: string;
@@ -32,42 +33,50 @@ interface DataTableProps<T> {
   onSelectionChange?: (keys: Selection) => void;
   searchable?: boolean;
   searchPlaceholder?: string;
+  isLoading?: boolean;
 }
 
 export function DataTable<T extends { id: string | number }>({
-  data,
+  data = [],
   columns,
   onRowAction,
   actionLabel = 'Acciones',
   selectionMode = 'none',
   onSelectionChange,
   searchable = true,
-  searchPlaceholder = 'Buscar...'
+  searchPlaceholder = 'Buscar...',
+  isLoading = false
 }: DataTableProps<T>) {
   const [page, setPage] = React.useState(1);
   const [searchTerm, setSearchTerm] = React.useState('');
   const rowsPerPage = 10;
 
   const filteredData = React.useMemo(() => {
+    if (!Array.isArray(data)) return [];
+    
     if (!searchTerm) return data;
     
     return data.filter(item => {
-      return Object.values(item).some(value => 
-        value !== null && 
-        value !== undefined && 
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      return Object.values(item).some(value => {
+        if (value === null || value === undefined) return false;
+        
+        // Manejar objetos y arrays
+        if (typeof value === 'object') {
+          return JSON.stringify(value).toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        
+        return value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+      });
     });
   }, [data, searchTerm]);
 
-  const pages = Math.ceil(filteredData.length / rowsPerPage);
+  const pages = Math.ceil(filteredData.length / rowsPerPage) || 1;
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     return filteredData.slice(start, end);
   }, [page, filteredData, rowsPerPage]);
 
-  // Create a columns array that includes the action column if needed
   const tableColumns = React.useMemo(() => {
     const cols = [...columns];
     if (onRowAction) {
@@ -79,7 +88,6 @@ export function DataTable<T extends { id: string | number }>({
     return cols;
   }, [columns, onRowAction, actionLabel]);
 
-  // Function to render cell content
   const renderCell = (item: T, columnKey: string) => {
     if (columnKey === "actions" && onRowAction) {
       return (
@@ -109,7 +117,9 @@ export function DataTable<T extends { id: string | number }>({
       return column.renderCell(item);
     }
     
-    return (item as any)[columnKey];
+    // Acceso seguro a propiedades
+    const value = (item as any)[columnKey];
+    return value !== null && value !== undefined ? value.toString() : '-';
   };
 
   return (
@@ -132,7 +142,7 @@ export function DataTable<T extends { id: string | number }>({
         selectionMode={selectionMode}
         onSelectionChange={onSelectionChange}
         bottomContent={
-          pages > 1 ? (
+          pages > 1 && !isLoading ? (
             <div className="flex justify-center">
               <Pagination
                 isCompact
@@ -159,13 +169,19 @@ export function DataTable<T extends { id: string | number }>({
           )}
         </TableHeader>
         <TableBody 
-          items={items}
-          emptyContent="No hay datos disponibles"
+          items={isLoading ? [] : items}
+          emptyContent={
+            isLoading ? (
+              <div className="flex justify-center py-4">
+                <Spinner size="lg" />
+              </div>
+            ) : "No hay datos disponibles"
+          }
         >
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={`row-${item.id}`}>
               {(columnKey) => (
-                <TableCell>
+                <TableCell key={`cell-${item.id}-${columnKey}`}>
                   {renderCell(item, columnKey.toString())}
                 </TableCell>
               )}

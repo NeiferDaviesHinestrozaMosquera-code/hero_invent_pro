@@ -28,8 +28,8 @@ interface Product {
   barcode: string;
   sku: string;
   cost: number;
-  minStock: number;
-  isActive: boolean;
+  min_stock: number;
+  status: boolean;
   imageUrl: string;
 }
 
@@ -193,8 +193,8 @@ const ProductForm: React.FC<{
     barcode: '',
     sku: '',
     cost: 0,
-    minStock: 5,
-    isActive: true,
+    min_stock: 0,
+    status: true,
     imageUrl: ''
   });
 
@@ -217,8 +217,8 @@ const ProductForm: React.FC<{
         barcode: '',
         sku: '',
         cost: 0,
-        minStock: 5,
-        isActive: true,
+        min_stock: 0,
+        status: true,
         imageUrl: ''
       });
     }
@@ -244,8 +244,8 @@ const ProductForm: React.FC<{
       errors.cost = 'El costo debe ser mayor o igual a 0';
     }
 
-    if (formData.minStock < 0) {
-      errors.minStock = 'El stock mínimo debe ser mayor o igual a 0';
+    if (formData.min_stock < 0) {
+      errors.min_stock = 'El stock mínimo debe ser mayor o igual a 0';
     }
 
     setFormErrors(errors);
@@ -372,11 +372,11 @@ const ProductForm: React.FC<{
                 label="Stock mínimo"
                 placeholder="5"
                 type="number"
-                value={formData.minStock.toString()}
-                onValueChange={(value) => handleInputChange('minStock', parseInt(value) || 5)}
+                value={formData.min_stock.toString()}
+                onValueChange={(value) => handleInputChange('min_stock', parseInt(value) || 5)}
                 isReadOnly={isReadOnly}
-                isInvalid={!!formErrors.minStock}
-                errorMessage={formErrors.minStock}
+                isInvalid={!!formErrors.min_stock}
+                errorMessage={formErrors.min_stock}
               />
             </div>
           </div>
@@ -446,8 +446,8 @@ const ProductForm: React.FC<{
             />
             
             <Switch
-              isSelected={formData.isActive}
-              onValueChange={(checked) => handleInputChange('isActive', checked)}
+              isSelected={formData.status}
+              onValueChange={(checked) => handleInputChange('status', checked)}
               isDisabled={isReadOnly}
             >
               Producto activo
@@ -767,9 +767,9 @@ export const Products: React.FC = () => {
       barcode: serverProduct.barcode || serverProduct.codigo_barras || '',
       sku: serverProduct.sku || serverProduct.codigo_sku || '',
       cost: parseFloat(serverProduct.cost || serverProduct.costo) || 0,
-      minStock: parseInt(serverProduct.min_stock || serverProduct.minStock || serverProduct.stock_minimo) || 5,
-      isActive: serverProduct.is_active !== undefined ? Boolean(serverProduct.is_active) : 
-               serverProduct.isActive !== undefined ? Boolean(serverProduct.isActive) :
+      min_stock: parseInt(serverProduct.min_stock || serverProduct.min_stock || serverProduct.stock_minimo) || 5,
+      status: serverProduct.status !== undefined ? Boolean(serverProduct.status) : 
+               serverProduct.status !== undefined ? Boolean(serverProduct.status) :
                serverProduct.activo !== undefined ? Boolean(serverProduct.activo) : true,
       imageUrl: serverProduct.image || serverProduct.imagen || serverProduct.imageUrl || ''
     };
@@ -789,8 +789,8 @@ export const Products: React.FC = () => {
       barcode: clientProduct.barcode || '',
       sku: clientProduct.sku || '',
       cost: parseFloat(clientProduct.cost.toString()) || 0,
-      min_stock: parseInt(clientProduct.minStock.toString()) || 5,
-      is_active: clientProduct.isActive !== undefined ? clientProduct.isActive : true,
+      min_stock: parseInt(clientProduct.min_stock.toString()) || 0,
+      status: clientProduct.status !== undefined ? clientProduct.status : true,
       image: clientProduct.imageUrl || ''
     };
   };
@@ -961,7 +961,7 @@ export const Products: React.FC = () => {
       key: 'stock',
       label: 'Stock',
       renderCell: (product: Product) => {
-        const isLowStock = product.stock <= product.minStock;
+        const isLowStock = product.stock <= product.min_stock;
         return (
           <Chip 
             size="sm" 
@@ -980,9 +980,9 @@ export const Products: React.FC = () => {
         <Chip 
           size="sm" 
           variant="flat" 
-          color={product.isActive ? 'success' : 'default'}
+          color={product.status ? 'success' : 'default'}
         >
-          {product.isActive ? 'Activo' : 'Inactivo'}
+          {product.status ? 'Activo' : 'Inactivo'}
         </Chip>
       )
     }
@@ -1079,7 +1079,7 @@ export const Products: React.FC = () => {
                 <Icon icon="mdi:check-circle" className="w-6 h-6 text-success" />
               </div>
               <p className="text-2xl font-bold">
-                {productList.filter(p => p.isActive).length}
+                {productList.filter(p => p.status).length}
               </p>
               <p className="text-sm text-foreground-500">Productos Activos</p>
             </CardBody>
@@ -1091,7 +1091,7 @@ export const Products: React.FC = () => {
                 <Icon icon="mdi:alert-triangle" className="w-6 h-6 text-warning" />
               </div>
               <p className="text-2xl font-bold">
-                {productList.filter(p => p.stock <= p.minStock).length}
+                {productList.filter(p => p.stock <= p.min_stock).length}
               </p>
               <p className="text-sm text-foreground-500">Stock Bajo</p>
             </CardBody>

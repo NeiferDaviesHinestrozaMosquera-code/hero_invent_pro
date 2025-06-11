@@ -29,8 +29,9 @@ interface StockAdjustment {
   reason?: string;
 }
 
-// API base URL - ajusta según tu configuración
-const API_BASE_URL = 'http://localhost:8000/api';
+// API base URL - configurado desde variables de entorno
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = `${API_BASE}/api`;
 
 export const Inventory: React.FC = () => {
   // Estados para modales
