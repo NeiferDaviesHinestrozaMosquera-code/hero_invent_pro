@@ -34,6 +34,7 @@ interface DataTableProps<T> {
   searchable?: boolean;
   searchPlaceholder?: string;
   isLoading?: boolean;
+  error?: string | null;
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -45,32 +46,41 @@ export function DataTable<T extends { id: string | number }>({
   onSelectionChange,
   searchable = true,
   searchPlaceholder = 'Buscar...',
-  isLoading = false
+  isLoading = false,
+  error = null
 }: DataTableProps<T>) {
   const [page, setPage] = React.useState(1);
   const [searchTerm, setSearchTerm] = React.useState('');
   const rowsPerPage = 10;
 
   const filteredData = React.useMemo(() => {
-    if (!Array.isArray(data)) return [];
+    if (!Array.isArray(data) || data.length === 0) return [];
     
     if (!searchTerm) return data;
     
     return data.filter(item => {
-      return Object.values(item).some(value => {
-        if (value === null || value === undefined) return false;
-        
-        // Manejar objetos y arrays
-        if (typeof value === 'object') {
-          return JSON.stringify(value).toLowerCase().includes(searchTerm.toLowerCase());
-        }
-        
-        return value.toString().toLowerCase().includes(searchTerm.toLowerCase());
-      });
+      try {
+        return Object.values(item).some(value => {
+          if (value === null || value === undefined) return false;
+          
+          // Manejar objetos y arrays
+          if (typeof value === 'object') {
+            try {
+              return JSON.stringify(value).toLowerCase().includes(searchTerm.toLowerCase());
+            } catch {
+              return false;
+            }
+          }
+          
+          return value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        });
+      } catch {
+        return false;
+      }
     });
   }, [data, searchTerm]);
 
-  const pages = Math.ceil(filteredData.length / rowsPerPage) || 1;
+  const pages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
@@ -114,13 +124,48 @@ export function DataTable<T extends { id: string | number }>({
     
     const column = columns.find(col => col.key === columnKey);
     if (column?.renderCell) {
-      return column.renderCell(item);
+      try {
+        return column.renderCell(item);
+      } catch (error) {
+        console.error('Error rendering cell:', error);
+        return '-';
+      }
     }
     
     // Acceso seguro a propiedades
-    const value = (item as any)[columnKey];
-    return value !== null && value !== undefined ? value.toString() : '-';
+    try {
+      const value = (item as any)[columnKey];
+      return value !== null && value !== undefined ? value.toString() : '-';
+    } catch {
+      return '-';
+    }
   };
+
+  // Mostrar error si existe
+  if (error) {
+    return (
+      <div className="space-y-4">
+        {searchable && (
+          <div className="flex justify-between items-center">
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onValueChange={setSearchTerm}
+              startContent={<Icon icon="lucide:search" className="text-default-400" />}
+              className="w-full sm:max-w-xs"
+              isDisabled
+            />
+          </div>
+        )}
+        
+        <div className="flex flex-col items-center py-8 text-center border border-danger rounded-lg">
+          <Icon icon="lucide:alert-circle" className="text-danger text-4xl mb-4" />
+          <h3 className="text-lg font-medium mb-2">Error al cargar los datos</h3>
+          <p className="text-foreground-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -132,6 +177,7 @@ export function DataTable<T extends { id: string | number }>({
             onValueChange={setSearchTerm}
             startContent={<Icon icon="lucide:search" className="text-default-400" />}
             className="w-full sm:max-w-xs"
+            isDisabled={isLoading}
           />
         </div>
       )}
@@ -172,10 +218,15 @@ export function DataTable<T extends { id: string | number }>({
           items={isLoading ? [] : items}
           emptyContent={
             isLoading ? (
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-8">
                 <Spinner size="lg" />
               </div>
-            ) : "No hay datos disponibles"
+            ) : (
+              <div className="flex flex-col items-center py-8 text-center">
+                <Icon icon="lucide:database" className="text-foreground-300 text-4xl mb-2" />
+                <p className="text-foreground-600">No hay datos disponibles</p>
+              </div>
+            )
           }
         >
           {(item) => (

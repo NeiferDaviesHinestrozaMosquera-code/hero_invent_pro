@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardBody } from '@heroui/react';
+import { Card, CardBody, Skeleton } from '@heroui/react';
 import { Icon } from '@iconify/react';
 
 interface StatsCardProps {
@@ -8,14 +8,32 @@ interface StatsCardProps {
   icon: string;
   color: 'primary' | 'success' | 'warning' | 'danger' | 'secondary';
   change?: {
-    value: number;
+    value: number | string;
     isPositive: boolean;
   };
+  loading?: boolean;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, change }) => {
+export const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, change, loading = false }) => {
   const bgColorClass = `bg-${color}-100`;
   const textColorClass = `text-${color}-500`;
+
+  if (loading) {
+    return (
+      <Card className="border border-divider">
+        <CardBody>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <Skeleton className="w-20 h-4 mb-2" />
+              <Skeleton className="w-16 h-8 mb-2" />
+              <Skeleton className="w-12 h-3" />
+            </div>
+            <Skeleton className="w-10 h-10 rounded-md" />
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border border-divider">

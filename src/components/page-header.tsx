@@ -8,6 +8,7 @@ interface PageHeaderProps {
   actionLabel?: string;
   onAction?: () => void;
   actionIcon?: string;
+  rightElement?: React.ReactNode;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -15,7 +16,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   description,
   actionLabel,
   onAction,
-  actionIcon = 'lucide:plus'
+  actionIcon = 'lucide:plus',
+  rightElement
 }) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -24,8 +26,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         {description && <p className="text-foreground-500 mt-1">{description}</p>}
       </div>
       {actionLabel && onAction && (
-        <Button 
-          color="primary" 
+        <Button
+          color="primary"
           onPress={onAction}
           startContent={<Icon icon={actionIcon} />}
         >

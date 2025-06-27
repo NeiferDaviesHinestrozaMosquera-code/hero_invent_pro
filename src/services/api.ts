@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 // Configuración base de la API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 // Utilidades para la API
 export const apiUtils = {
@@ -346,8 +346,12 @@ export const reportsAPI = {
   }
 };
 
+
+
+
 // Exportación por defecto (opcional, pero evita el error)
 const api = {
+
   suppliersAPI,
   productsAPI,
   inventoryAPI,

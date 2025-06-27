@@ -27,8 +27,8 @@ interface PurchaseItem {
   purchase_id: number;
   product_id: number;
   quantity: number;
-  cost: number;           // ✅ Campo real de la BD
-  subtotal: number;       // ✅ Campo calculado automáticamente por la BD
+  cost: number;
+  subtotal: number;
   created_at?: string;
   updated_at?: string;
   product_name?: string;
@@ -38,7 +38,7 @@ interface PurchaseItem {
 interface PurchaseItemForm {
   product_id: string;
   quantity: string;
-  cost: string;           // ✅ Usar 'cost' directamente
+  cost: string;
   use_product_cost: boolean;
 }
 
@@ -57,7 +57,7 @@ export const Purchases: React.FC = () => {
   const [formData, setFormData] = React.useState<PurchaseItemForm>({
     product_id: '',
     quantity: '',
-    cost: '',              // ✅ Usar 'cost'
+    cost: '',
     use_product_cost: true
   });
 
@@ -66,7 +66,6 @@ export const Purchases: React.FC = () => {
     fetchProducts();
   }, []);
 
-  // Efecto para establecer automáticamente el costo base cuando se selecciona un producto
   React.useEffect(() => {
     if (formData.product_id && formData.use_product_cost) {
       const selectedProduct = products.find(p => p.id.toString() === formData.product_id);
@@ -79,7 +78,6 @@ export const Purchases: React.FC = () => {
     }
   }, [formData.product_id, formData.use_product_cost, products]);
 
-  // Efecto para establecer el costo base automáticamente cuando se selecciona un producto (incluso sin checkbox)
   React.useEffect(() => {
     if (formData.product_id) {
       const selectedProduct = products.find(p => p.id.toString() === formData.product_id);
@@ -128,69 +126,68 @@ export const Purchases: React.FC = () => {
     }
   };
 
-  const handleCreatePurchaseItem = async () => {
-    if (!formData.product_id || !formData.quantity || !formData.cost) {
-      alert('Por favor complete todos los campos obligatorios');
-      return;
+ const handleCreatePurchaseItem = async () => {
+  if (!formData.product_id || !formData.quantity || !formData.cost) {
+    alert('Por favor complete todos los campos obligatorios');
+    return;
+  }
+
+  const quantity = parseInt(formData.quantity);
+  const cost = parseFloat(formData.cost);
+  
+  if (isNaN(quantity) || quantity <= 0) {
+    alert('Por favor ingrese una cantidad válida mayor a 0');
+    return;
+  }
+  
+  if (isNaN(cost) || cost < 0) {
+    alert('Por favor ingrese un costo unitario válido');
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(null);
+
+    // ✅ NO ENVIAR ID - DEJAR QUE LA BASE DE DATOS LO MANEJE
+    const requestBody = {
+      purchase_id: 1,
+      product_id: parseInt(formData.product_id),
+      quantity: quantity,
+      cost: cost
+    };
+
+    console.log('🚀 Enviando request SIN ID:', requestBody);
+
+    const response = await fetch(`${API_BASE_URL}/purchase_items`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const responseData = await response.json();
+      console.log('✅ Purchase item creado exitosamente:', responseData);
+      
+      await fetchPurchaseItems();
+      resetForm();
+      onClose();
+      alert('Elemento de compra registrado exitosamente');
+    } else {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      const errorMessage = errorData.message || errorData.error || 'No se pudo registrar el elemento de compra';
+      setError(`Error al crear: ${errorMessage}`);
+      console.error('❌ Error response:', errorData);
     }
-
-    const quantity = parseInt(formData.quantity);
-    const cost = parseFloat(formData.cost);
-    
-    if (isNaN(quantity) || quantity <= 0) {
-      alert('Por favor ingrese una cantidad válida mayor a 0');
-      return;
-    }
-    
-    if (isNaN(cost) || cost < 0) {
-      alert('Por favor ingrese un costo unitario válido');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // ✅ DEFINITIVO: Solo campos necesarios, SIN ID
-      const requestBody = {
-        purchase_id: 1,
-        product_id: parseInt(formData.product_id),
-        quantity: quantity,
-        cost: cost
-        // ✅ ABSOLUTAMENTE NO enviar: id, subtotal, total_cost, unit_cost
-      };
-
-      console.log('🚀 Enviando request SIN ID:', requestBody);
-
-      const response = await fetch(`${API_BASE_URL}/purchase_items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ Purchase item creado exitosamente:', responseData);
-        
-        await fetchPurchaseItems();
-        resetForm();
-        onClose();
-        alert('Elemento de compra registrado exitosamente');
-      } else {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        const errorMessage = errorData.message || errorData.error || 'No se pudo registrar el elemento de compra';
-        setError(`Error al crear: ${errorMessage}`);
-        console.error('❌ Error response:', errorData);
-      }
-    } catch (error) {
-      console.error('❌ Error creating purchase item:', error);
-      setError('Error al conectar con el servidor');
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error('❌ Error creating purchase item:', error);
+    setError('Error al conectar con el servidor');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUpdatePurchaseItem = async () => {
     if (!selectedPurchaseItem || !formData.product_id || !formData.quantity || !formData.cost) {
@@ -436,6 +433,14 @@ export const Purchases: React.FC = () => {
     );
   };
 
+    const calculateProfitPercentage = (product: Product) => {
+    if (!product.cost || !product.price) return 'N/A';
+    const profit = product.price - product.cost;
+    const percentage = (profit / product.cost) * 100;
+    return percentage.toFixed(2);
+  };
+
+
   const columns = [
     {
       key: 'id',
@@ -473,6 +478,20 @@ export const Purchases: React.FC = () => {
         <span className="font-medium">{formatCurrency(item.cost)}</span>
       )
     },
+    //xxx
+     {
+      key: 'profit',
+      label: 'Ganancia (%)',
+      renderCell: (item: PurchaseItem) => {
+        const product = products.find(p => p.id === item.product_id);
+        return (
+          <span className="font-medium text-success">
+            {product ? calculateProfitPercentage(product) : 'N/A'}%
+          </span>
+        );
+      }
+    },
+    //xxx
     {
       key: 'subtotal',
       label: 'Subtotal',

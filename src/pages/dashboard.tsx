@@ -6,10 +6,52 @@ import { SalesChart } from '../components/charts/sales-chart';
 import { ProductCategoryChart } from '../components/charts/product-category-chart';
 import { InventoryChart } from '../components/charts/inventory-chart';
 import { PageHeader } from '../components/page-header';
-import { products, categories, suppliers, salesChartData, categoryChartData, inventoryChartData } from '../data/mock-data';
+import { useDashboardData } from '../hooks/useDashboardData';
 
 export const Dashboard: React.FC = () => {
-  const lowStockProducts = products.filter(product => product.stock <= product.min_stock);
+  const {
+    dashboardStats,
+    salesVsPurchasesData,
+    productCategoryData,
+    inventoryData,
+    lowStockProducts,
+    loading,
+    error
+  } = useDashboardData();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Dashboard"
+          description="Resumen general del negocio"
+        />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <Icon icon="lucide:loader-2" className="animate-spin text-4xl mb-2" />
+            <p>Cargando datos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Dashboard"
+          description="Resumen general del negocio"
+        />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center text-danger">
+            <Icon icon="lucide:alert-circle" className="text-4xl mb-2" />
+            <p>Error al cargar los datos: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -19,47 +61,68 @@ export const Dashboard: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    
         <StatsCard
-          title="Ventas del mes"
-          value="$45,000.00"
+          title="Ventas del día"
+          value={`$${dashboardStats?.today_sales.toLocaleString('es-CO', { minimumFractionDigits: 2 }) || '0.00'}`}
           icon="lucide:shopping-cart"
           color="primary"
-          change={{ value: 12, isPositive: true }}
+        />
+
+        <StatsCard
+          title="Ingresos del día"
+          value={`$${dashboardStats?.today_income.toLocaleString('es-CO', { minimumFractionDigits: 2 }) || '0.00'}`}
+          icon="lucide:arrow-down-circle"
+          color="success"
+        />
+
+        <StatsCard
+          title="Gastos del día"
+          value={`$${dashboardStats?.today_expenses.toLocaleString('es-CO', { minimumFractionDigits: 2 }) || '0.00'}`}
+          icon="lucide:arrow-up-circle"
+          color="danger"
+        />
+
+        <StatsCard
+          title="Bajo stock"
+          value={dashboardStats?.low_stock_count.toString() || '0'}
+          icon="lucide:alert-triangle"
+          color="warning"
         />
         <StatsCard
           title="Productos"
-          value={products.length.toString()}
+          value={dashboardStats?.total_products?.toString() || '0'}
           icon="lucide:package"
           color="secondary"
         />
         <StatsCard
           title="Categorías"
-          value={categories.length.toString()}
+          value={dashboardStats?.total_categories?.toString() || '0'}
           icon="lucide:tag"
           color="success"
         />
         <StatsCard
           title="Proveedores"
-          value={suppliers.length.toString()}
+          value={dashboardStats?.total_suppliers?.toString() || '0'}
           icon="lucide:truck"
           color="warning"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SalesChart data={salesChartData} title="Ventas vs Compras (Mensual)" />
-        <ProductCategoryChart data={categoryChartData} title="Productos por Categoría" />
+        <SalesChart data={salesVsPurchasesData} title="Ventas vs Compras (Mensual)" />
+        <ProductCategoryChart data={productCategoryData} title="Productos por Categoría" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <InventoryChart data={inventoryChartData} title="Niveles de Inventario" />
+        <InventoryChart data={inventoryData} title="Niveles de Inventario" />
 
         <Card className="border border-divider">
           <CardHeader className="pb-0 pt-4 px-4 flex-col items-start">
             <h4 className="font-semibold text-large">Productos con Bajo Stock</h4>
           </CardHeader>
           <CardBody>
-            {lowStockProducts.length > 0 ? (
+            {lowStockProducts && lowStockProducts.length > 0 ? (
               <div className="space-y-4">
                 {lowStockProducts.map((product) => (
                   <div key={product.id}>
@@ -93,8 +156,11 @@ export const Dashboard: React.FC = () => {
           </CardBody>
         </Card>
       </div>
-              <center> <text name="" id="">Create for Digital Emporiun - 2025</text></center>
 
+      {/* Footer corregido */}
+      <div className="text-center py-4">
+        <p className="text-sm text-foreground-400">Created for Digital Emporium- 2025</p>
+      </div>
     </div>
   );
 };

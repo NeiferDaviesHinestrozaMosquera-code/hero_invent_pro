@@ -1,23 +1,86 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardBody, CardHeader, Tabs, Tab, Chip, Button, Select, SelectItem, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { PageHeader } from '../components/page-header';
 import { DataTable } from '../components/data-table';
-import { accountingData } from '../data/mock-data';
+// Eliminar: import { accountingData } from '../data/mock-data';
+
+interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number; // Asegúrate de que esto sea 'number'
+  category: string;
+}
 
 export const Accounting: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedTab, setSelectedTab] = React.useState('income');
   const [reportPeriod, setReportPeriod] = React.useState('month');
-  const [incomeList, setIncomeList] = React.useState([...accountingData.income]);
-  const [expensesList, setExpensesList] = React.useState([...accountingData.expenses]);
-  const [transactionType, setTransactionType] = React.useState<'income' | 'expense'>('income');
-  const [formData, setFormData] = React.useState({
+  
+  // Estados para los datos reales de la base de datos
+  const [incomeList, setIncomeList] = useState<Transaction[]>([]);
+  const [expensesList, setExpensesList] = useState<Transaction[]>([]);
+
+  // Estados para la carga y errores
+  const [isLoadingIncome, setIsLoadingIncome] = useState(true);
+  const [errorIncome, setErrorIncome] = useState<string | null>(null);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
+  const [errorExpenses, setErrorExpenses] = useState<string | null>(null);
+
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
+  const [formData, setFormData] = useState({
     description: '',
     amount: '',
     category: '',
     date: new Date().toISOString().split('T')[0]
   });
+
+  // Función para obtener ingresos
+  const fetchIncomeData = async () => {
+    setIsLoadingIncome(true);
+    setErrorIncome(null);
+    try {
+      const response = await fetch('http://localhost:8000/api/income' ); 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: Transaction[] = await response.json();
+      // Asegurarse de que 'amount' sea un número al cargar
+      setIncomeList(data.map(item => ({ ...item, amount: parseFloat(item.amount as any) })));
+    } catch (error: any) {
+      console.error("Error fetching income data:", error);
+      setErrorIncome("No se pudieron cargar los ingresos. Inténtalo de nuevo más tarde.");
+    } finally {
+      setIsLoadingIncome(false);
+    }
+  };
+
+  // Función para obtener gastos
+  const fetchExpensesData = async () => {
+    setIsLoadingExpenses(true);
+    setErrorExpenses(null);
+    try {
+      const response = await fetch('http://localhost:8000/api/expenses' ); 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: Transaction[] = await response.json();
+      // Asegurarse de que 'amount' sea un número al cargar
+      setExpensesList(data.map(item => ({ ...item, amount: parseFloat(item.amount as any) })));
+    } catch (error: any) {
+      console.error("Error fetching expenses data:", error);
+      setErrorExpenses("No se pudieron cargar los gastos. Inténtalo de nuevo más tarde.");
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  };
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    fetchIncomeData();
+    fetchExpensesData();
+  }, []); // El array vacío asegura que se ejecute solo una vez al montar
 
   const handleAddTransaction = (type: 'income' | 'expense') => {
     setTransactionType(type);
@@ -30,7 +93,7 @@ export const Accounting: React.FC = () => {
     onOpen();
   };
 
-  const handleSaveTransaction = () => {
+  const handleSaveTransaction = async () => {
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
       alert('Por favor ingrese un monto válido');
@@ -38,26 +101,45 @@ export const Accounting: React.FC = () => {
     }
 
     const newTransaction = {
-      id: Date.now().toString(),
       date: formData.date,
       description: formData.description,
       amount,
       category: formData.category || 'Otros'
     };
 
-    if (transactionType === 'income') {
-      setIncomeList(prev => [newTransaction, ...prev]);
-    } else {
-      setExpensesList(prev => [newTransaction, ...prev]);
+    const endpoint = transactionType === 'income' ? 'http://localhost:8000/api/income' : 'http://localhost:8000/api/expenses';
+    
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTransaction ),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Después de guardar, recargar los datos para reflejar el cambio
+      if (transactionType === 'income') {
+        fetchIncomeData();
+      } else {
+        fetchExpensesData();
+      }
+      onClose();
+    } catch (error) {
+      console.error("Error saving transaction:", error);
+      alert(`Error al guardar la transacción: ${error instanceof Error ? error.message : String(error)}`);
     }
-    onClose();
   };
 
   const incomeColumns = [
     {
       key: 'date',
       label: 'Fecha',
-      renderCell: (item: any) => {
+      renderCell: (item: Transaction) => {
         const date = new Date(item.date);
         return date.toLocaleDateString('es-CO');
       }
@@ -69,7 +151,7 @@ export const Accounting: React.FC = () => {
     {
       key: 'category',
       label: 'Categoría',
-      renderCell: (item: any) => (
+      renderCell: (item: Transaction) => (
         <Chip color="primary" variant="flat" size="sm">
           {item.category}
         </Chip>
@@ -78,7 +160,7 @@ export const Accounting: React.FC = () => {
     {
       key: 'amount',
       label: 'Monto',
-      renderCell: (item: any) => (
+      renderCell: (item: Transaction) => (
         <span className="font-medium text-success">${item.amount.toFixed(2)}</span>
       )
     }
@@ -88,7 +170,7 @@ export const Accounting: React.FC = () => {
     {
       key: 'date',
       label: 'Fecha',
-      renderCell: (item: any) => {
+      renderCell: (item: Transaction) => {
         const date = new Date(item.date);
         return date.toLocaleDateString('es-CO');
       }
@@ -100,7 +182,7 @@ export const Accounting: React.FC = () => {
     {
       key: 'category',
       label: 'Categoría',
-      renderCell: (item: any) => (
+      renderCell: (item: Transaction) => (
         <Chip color="secondary" variant="flat" size="sm">
           {item.category}
         </Chip>
@@ -109,14 +191,15 @@ export const Accounting: React.FC = () => {
     {
       key: 'amount',
       label: 'Monto',
-      renderCell: (item: any) => (
+      renderCell: (item: Transaction) => (
         <span className="font-medium text-danger">${item.amount.toFixed(2)}</span>
       )
     }
   ];
 
-  const totalIncome = incomeList.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpenses = expensesList.reduce((sum, item) => sum + item.amount, 0);
+  // CAMBIO CLAVE AQUÍ: Usar parseFloat para asegurar que item.amount es un número
+  const totalIncome = incomeList.reduce((sum, item) => sum + parseFloat(item.amount as any), 0);
+  const totalExpenses = expensesList.reduce((sum, item) => sum + parseFloat(item.amount as any), 0);
   const balance = totalIncome - totalExpenses;
 
   return (
@@ -199,6 +282,8 @@ export const Accounting: React.FC = () => {
               columns={incomeColumns}
               searchable
               searchPlaceholder="Buscar ingresos..."
+              isLoading={isLoadingIncome} // Pasar estado de carga
+              error={errorIncome} // Pasar estado de error
             />
           </CardBody>
         </Card>
@@ -215,6 +300,8 @@ export const Accounting: React.FC = () => {
               columns={expensesColumns}
               searchable
               searchPlaceholder="Buscar gastos..."
+              isLoading={isLoadingExpenses} // Pasar estado de carga
+              error={errorExpenses} // Pasar estado de error
             />
           </CardBody>
         </Card>
